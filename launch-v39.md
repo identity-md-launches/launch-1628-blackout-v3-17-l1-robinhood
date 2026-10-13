@@ -6,7 +6,7 @@ Site: https://playblackout.xyz
 
 ## Frozen inputs and build
 
-Build exactly with this repository's unchanged `foundry.toml`: solc 0.8.26, optimizer true / 200 runs, Cancun, viaIR false, bytecode_hash none. `out/` and `out-launch/` must contain identical creation code. Run `python3 tools/pin_module_code.py --check`, `python3 tools/pin_swarm_code.py --check`, and `node tools/check_deploy_gate.mjs` before handing off. The deploy-gate tool takes the JSON plan (`node tools/check_deploy_gate.mjs docs/launch-v314-plan.json`, also its default), never this markdown runbook: it walks every `constructorArgs` array of a JSON launch document and refuses any literal IMD protocol address. `docs/launch-v314-plan.json` is the machine-readable source plan, not a platform manifest; the platform prepares the actual manifest separately.
+Build exactly with this repository's unchanged `foundry.toml`: solc 0.8.26, optimizer true / 200 runs, Cancun, viaIR false, bytecode_hash none. `out/` and `out-launch/` must contain identical creation code. First run `forge build` and `forge build --out out-launch --cache-path cache-launch`; the pin checkers require both artifact directories, even on a fresh checkout. Run `python3 tools/pin_module_code.py --check`, `python3 tools/pin_swarm_code.py --check`, and `node tools/check_deploy_gate.mjs` before handing off. The deploy-gate tool takes the JSON plan (`node tools/check_deploy_gate.mjs docs/launch-v314-plan.json`, also its default), never this markdown runbook: it walks every `constructorArgs` array of a JSON launch document and refuses any literal IMD protocol address. `docs/launch-v314-plan.json` is the machine-readable source plan, not a platform manifest; the platform prepares the actual manifest separately.
 
 GAME_CONFIG_HASH is unchanged: **0x11ed7438974e96ecc962201e9c46422c7bf239d725876863fa25a56c734b20d3**. Endowment is **200000000000000000000000000**. The existing private STARTER_ROOT, FREE_ROOT and SNAPSHOT_BLOCK remain unchanged and are supplied only for L3; they were already symbolic inputs in this repository. Before L3, verify `keccak256(abi.encode(bytes32 STARTER_ROOT, bytes32 FREE_ROOT, uint256 SNAPSHOT_BLOCK, uint256 ENDOWMENT))` equals that exact hash. A mismatch stops the launch; never substitute rehearsal roots or alter the commitment.
 
@@ -63,7 +63,7 @@ Accepted findings (verbatim and in full in docs/accepted-v317.md; abridged here 
 - Accepted — Exact-input swaps only: V4Market rejects exact-output swaps; request exact input with a minimum output.
 - Accepted — `spot()` bounds: zero, underflowed or above-1e40 prices revert; keep the pool inside these bounds.
 - Accepted — Fixed oracle signer/endpoints: compiled in, no owner rotation; migration needs a reviewed source release.
-- Accepted — Answers between job A and job B: stored after L3, executable only once all L4 modules are registered.
+- Accepted — Answers between job A and job B: regulator answers can be stored after L3 binds; stream 0 also requires role 1 registration and a matching epoch. Defer execution until all L4 modules are registered, within the answer validity deadline.
 - Accepted — Future-block randomness: native L2 block entropy with capture/re-arm rules, not VRF; enhancement attempts lapse to their worst outcome instead of re-arming (v3.17).
 - Accepted — Reserved Params keys (docs/params-keys-v313.md): no gameplay effect; proposals may still consume cooldown.
 - Accepted — M-2 matching twin: only the pinned binder can bind; the binder key could still choose a proven twin (docs/m2-trust-assumption.md).
@@ -80,7 +80,7 @@ Accepted findings (verbatim and in full in docs/accepted-v317.md; abridged here 
 - Accepted — L1 judge, one-shot escrow: `forward` runs once to the proven RewardPool; no retry or admin by design.
 - Accepted — L1 judge, Festival band: attested severities are clamped to 5000–7000; the fallback table keeps 10000.
 - Accepted — L1 judge, `Economy._insert` 33-tie lock griefing: deeper insertion reverts atomically; no funds at risk.
-- Accepted — L1 judge, stream-0 answers before role 1: stored, executed only after wiring completes.
+- Accepted — Stream-0 answers before role 1 (import audit correction): intake reverts NotConfigured and stores nothing. Register role 1 first; re-present still-valid signed answers afterward. A premature paid backup can spend its fee without storing an answer, and that slot cannot buy another backup.
 - Accepted — Binder liveness: one-time bind by 0x6d51…d007; a lost key leaves the Desk unbound and the endowment in escrow; the binder cannot bypass any proof.
 Project: https://playblackout.xyz
 ```
@@ -101,7 +101,7 @@ Accepted findings (verbatim and in full in docs/accepted-v317.md; abridged here 
 - Accepted — Exact-input swaps only: V4Market rejects exact-output swaps; request exact input with a minimum output.
 - Accepted — `spot()` bounds: zero, underflowed or above-1e40 prices revert; keep the pool inside these bounds.
 - Accepted — Fixed oracle signer/endpoints: compiled in, no owner rotation; migration needs a reviewed source release.
-- Accepted — Answers between job A and job B: stored after L3, executable only once all L4 modules are registered.
+- Accepted — Answers between job A and job B: regulator answers can be stored after L3 binds; stream 0 also requires role 1 registration and a matching epoch. Defer execution until all L4 modules are registered, within the answer validity deadline.
 - Accepted — Future-block randomness: native L2 block entropy with capture/re-arm rules, not VRF; enhancement attempts lapse to their worst outcome instead of re-arming (v3.17).
 - Accepted — Reserved Params keys (docs/params-keys-v313.md): no gameplay effect; proposals may still consume cooldown.
 - Accepted — M-2 matching twin: only the pinned binder can bind; the binder key could still choose a proven twin (docs/m2-trust-assumption.md).
@@ -118,7 +118,7 @@ Accepted findings (verbatim and in full in docs/accepted-v317.md; abridged here 
 - Accepted — L1 judge, one-shot escrow: `forward` runs once to the proven RewardPool; no retry or admin by design.
 - Accepted — L1 judge, Festival band: attested severities are clamped to 5000–7000; the fallback table keeps 10000.
 - Accepted — L1 judge, `Economy._insert` 33-tie lock griefing: deeper insertion reverts atomically; no funds at risk.
-- Accepted — L1 judge, stream-0 answers before role 1: stored, executed only after wiring completes.
+- Accepted — Stream-0 answers before role 1 (import audit correction): intake reverts NotConfigured and stores nothing. Register role 1 first; re-present still-valid signed answers afterward. A premature paid backup can spend its fee without storing an answer, and that slot cannot buy another backup.
 - Accepted — Binder liveness: one-time bind by 0x6d51…d007; a lost key leaves the Desk unbound and the endowment in escrow; the binder cannot bypass any proof.
 Project: https://playblackout.xyz
 ```
@@ -153,7 +153,7 @@ Accepted findings (verbatim and in full in docs/accepted-v317.md; abridged here 
 - Accepted — Exact-input swaps only: V4Market rejects exact-output swaps; request exact input with a minimum output.
 - Accepted — `spot()` bounds: zero, underflowed or above-1e40 prices revert; keep the pool inside these bounds.
 - Accepted — Fixed oracle signer/endpoints: compiled in, no owner rotation; migration needs a reviewed source release.
-- Accepted — Answers between job A and job B: stored after L3, executable only once all L4 modules are registered.
+- Accepted — Answers between job A and job B: regulator answers can be stored after L3 binds; stream 0 also requires role 1 registration and a matching epoch. Defer execution until all L4 modules are registered, within the answer validity deadline.
 - Accepted — Future-block randomness: native L2 block entropy with capture/re-arm rules, not VRF; enhancement attempts lapse to their worst outcome instead of re-arming (v3.17).
 - Accepted — Reserved Params keys (docs/params-keys-v313.md): no gameplay effect; proposals may still consume cooldown.
 - Accepted — M-2 matching twin: only the pinned binder can bind; the binder key could still choose a proven twin (docs/m2-trust-assumption.md).
@@ -170,7 +170,7 @@ Accepted findings (verbatim and in full in docs/accepted-v317.md; abridged here 
 - Accepted — L1 judge, one-shot escrow: `forward` runs once to the proven RewardPool; no retry or admin by design.
 - Accepted — L1 judge, Festival band: attested severities are clamped to 5000–7000; the fallback table keeps 10000.
 - Accepted — L1 judge, `Economy._insert` 33-tie lock griefing: deeper insertion reverts atomically; no funds at risk.
-- Accepted — L1 judge, stream-0 answers before role 1: stored, executed only after wiring completes.
+- Accepted — Stream-0 answers before role 1 (import audit correction): intake reverts NotConfigured and stores nothing. Register role 1 first; re-present still-valid signed answers afterward. A premature paid backup can spend its fee without storing an answer, and that slot cannot buy another backup.
 - Accepted — Binder liveness: one-time bind by 0x6d51…d007; a lost key leaves the Desk unbound and the endowment in escrow; the binder cannot bypass any proof.
 Project: https://playblackout.xyz
 ```
@@ -205,7 +205,7 @@ Accepted findings (verbatim and in full in docs/accepted-v317.md; abridged here 
 - Accepted — Exact-input swaps only: V4Market rejects exact-output swaps; request exact input with a minimum output.
 - Accepted — `spot()` bounds: zero, underflowed or above-1e40 prices revert; keep the pool inside these bounds.
 - Accepted — Fixed oracle signer/endpoints: compiled in, no owner rotation; migration needs a reviewed source release.
-- Accepted — Answers between job A and job B: stored after L3, executable only once all L4 modules are registered.
+- Accepted — Answers between job A and job B: regulator answers can be stored after L3 binds; stream 0 also requires role 1 registration and a matching epoch. Defer execution until all L4 modules are registered, within the answer validity deadline.
 - Accepted — Future-block randomness: native L2 block entropy with capture/re-arm rules, not VRF; enhancement attempts lapse to their worst outcome instead of re-arming (v3.17).
 - Accepted — Reserved Params keys (docs/params-keys-v313.md): no gameplay effect; proposals may still consume cooldown.
 - Accepted — M-2 matching twin: only the pinned binder can bind; the binder key could still choose a proven twin (docs/m2-trust-assumption.md).
@@ -222,7 +222,7 @@ Accepted findings (verbatim and in full in docs/accepted-v317.md; abridged here 
 - Accepted — L1 judge, one-shot escrow: `forward` runs once to the proven RewardPool; no retry or admin by design.
 - Accepted — L1 judge, Festival band: attested severities are clamped to 5000–7000; the fallback table keeps 10000.
 - Accepted — L1 judge, `Economy._insert` 33-tie lock griefing: deeper insertion reverts atomically; no funds at risk.
-- Accepted — L1 judge, stream-0 answers before role 1: stored, executed only after wiring completes.
+- Accepted — Stream-0 answers before role 1 (import audit correction): intake reverts NotConfigured and stores nothing. Register role 1 first; re-present still-valid signed answers afterward. A premature paid backup can spend its fee without storing an answer, and that slot cannot buy another backup.
 - Accepted — Binder liveness: one-time bind by 0x6d51…d007; a lost key leaves the Desk unbound and the endowment in escrow; the binder cannot bypass any proof.
 Project: https://playblackout.xyz
 ```
@@ -231,7 +231,7 @@ Project: https://playblackout.xyz
 
 1. After L1, check `Desk.registry() == 0`, `Desk.binder() == 0x6d51cBE774aeAe4dd40bCA2560E9bc2695A0d007`, all `oracleConfig()` endpoints match Robinhood.sol, and the binding hash, 200 bps heartbeat and 1 ETH cap match this runbook. Check `Escrow.desk()` equals the L1 Desk and `forwarded()` is false.
 2. After L2, check `(ETH, TOKEN, 12500, 60, HOOK)`, `manager()` and `launcher()` match the pinned PoolManager and LaunchFactory, `desk()` and `gameConfigHash()` match L1, and `initializedAt() != 0`. The escrow must hold at least 200,000,000e18 tokens; liquidity dust may make the balance larger.
-3. Immediately after L3, the **binder wallet** `0x6d51cBE774aeAe4dd40bCA2560E9bc2695A0d007` signs and sends `Desk.bind(REGISTRY, registryCreationCode, paramsCreationCode, N_A, 1, N_A, 0, N_TOKEN)` using the v3.17 artifacts, where `N_TOKEN` is the recorded L2 launch number (`keeper/wiring.json` `tokenLaunch`). `node keeper/keeper.mjs wire --wiring wiring.json --step bind-desk` simulates the call from `Desk.binder()` and prints the transaction (from, to, data) for that wallet to sign; the keeper key cannot send it (any other caller reverts `Unauthorized`). The Desk reads `LaunchFactory.positionOf(N_TOKEN)` and requires it to name `(ETH, TOKEN, 12500, 60, HOOK)` with `HOOK == REGISTRY.market()` and `TOKEN == REGISTRY.token()`; check that record yourself first with `cast call 0xa25b…4645 "positionOf(uint64)" N_TOKEN` (launch 832 reads `currency0 == 0x0`, like every ETH-paired univ4_hook launch). After the binder's transaction confirms, re-run `wire`: it confirms `Desk.registry() == REGISTRY` and stops otherwise. Confirm `Desk.tokenLaunch() == N_TOKEN`, registry token/market/Params/roots/snapshot, and `Params.swarmWallet() == DESK`. Then `GameRegistry.register(role, N_A, role + 2, creationCode)` for roles 0–5 (permissionless, keeper key). Keep eligibility lists private until binding is verified. If a different registry is bound, stop; do not forward funds or publish wiring. The binder key must be available once, after L3: if it is lost before binding, the Desk never binds and the endowment stays in the escrow. See `docs/m2-trust-assumption.md`.
+3. Immediately after L3, the **binder wallet** `0x6d51cBE774aeAe4dd40bCA2560E9bc2695A0d007` signs and sends `Desk.bind(REGISTRY, registryCreationCode, paramsCreationCode, N_A, 1, N_A, 0, N_TOKEN)` using the v3.17 artifacts, where `N_TOKEN` is the recorded L2 launch number (`keeper/wiring.json` `tokenLaunch`). `node keeper/keeper.mjs wire --wiring wiring.json --step bind-desk` simulates the call from `Desk.binder()` and prints the transaction (from, to, data) for that wallet to sign; the keeper key cannot send it (any other caller reverts `Unauthorized`). The Desk reads `LaunchFactory.positionOf(N_TOKEN)` and requires it to name `(ETH, TOKEN, 12500, 60, HOOK)` with `HOOK == REGISTRY.market()` and `TOKEN == REGISTRY.token()`; check that record yourself first with `cast call 0xa25b…4645 "positionOf(uint64)" N_TOKEN` (launch 832 reads `currency0 == 0x0`, like every ETH-paired univ4_hook launch). After the binder's transaction confirms, re-run `wire`: it confirms `Desk.registry() == REGISTRY` and stops otherwise. Confirm `Desk.tokenLaunch() == N_TOKEN`, registry token/market/Params/roots/snapshot, and `Params.swarmWallet() == DESK`. Then `GameRegistry.register(role, N_A, role + 2, creationCode)` for roles 0–5 (permissionless, keeper key). Verify `module(1)` against the recorded FarmRewards address before relaying stream-0 answers or buying stream-0 backups. Earlier stream-0 intake reverts without storing anything; re-present the signed bytes only while slot, epoch and freshness checks still pass. A failed paid callback does not refund its fee or reopen that slot, even after `clearExpired`. Keep eligibility lists private until binding is verified. If a different registry is bound, stop; do not forward funds or publish wiring. The binder key must be available once, after L3: if it is lost before binding, the Desk never binds and the endowment stays in the escrow. See `docs/m2-trust-assumption.md`.
 4. After L4, register roles 6–13 using `(role, N_B, role - 6, creationCode)`, and verify all fourteen modules. Call `V4Market.bindFeeRouter(FEE_ROUTER, N_A, 1)`, check `fees()` and `params()`, then call `flushFees()` if fees accumulated during launch.
 5. Recheck the bound registry, then `EndowmentEscrow.forward(REGISTRY, N_A, 1, registryCreationCode, N_A, 2, rewardPoolCreationCode)`. It transfers its entire token balance once to the authenticated RewardPool. Check escrow balance zero, `forwarded()`, and RewardPool balance ≥ principal; call `RewardPool.fundEndowment()` and check `endowed()` and the 42-day drip.
 6. Call `FarmRewards.advanceEpoch()` after funding and before announcing pack availability. The one-hour pack gate and 30-minute launch tax both start at L2 initialization, potentially hours before L4 is available. The tax may have ended by game activation; the clock never resets. A keeper should advance immediately once the complete graph is ready, not wait for another hour.

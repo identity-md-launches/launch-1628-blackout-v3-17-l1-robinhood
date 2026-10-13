@@ -51,6 +51,7 @@ The existing compiler configuration (Solidity 0.8.26) and dependencies are uncha
 
 ```sh
 forge build
+forge build --out out-launch --cache-path cache-launch
 python3 tools/pin_module_code.py --check
 python3 tools/pin_swarm_code.py --check
 python3 tools/check_v37_authority.py
@@ -63,11 +64,22 @@ node test/ui-v35.test.mjs
 python3 sim/run_v35.py
 ```
 
+Both build commands are required on a fresh checkout: the pin checkers read `out/` and
+`out-launch/`, while plain `forge build` only creates `out/`. The second command changes
+only artifact/cache locations and uses the same unchanged compiler configuration. Use
+`--check` for this pinned v3.17 launch; do not regenerate source pins.
+
 After a Solidity change: format, build, regenerate module pins with `python3 tools/pin_module_code.py`, then `python3 tools/pin_swarm_code.py`, re-flatten the hook (`forge flatten src/V4Market.sol -o launch/V4Market.sol`), rebuild, and check pins. Since v3.13 `foundry.toml` is the launch profile, so the `out/` and `out-launch/` builds are byte-identical and both pins of every role are the same hash; the `FOUNDRY_VIA_IR=false FOUNDRY_BYTECODE_HASH=none` overrides are now no-ops kept for the tools. Creation-code metadata is part of the binding. After changing pins, use a clean build before deriving launch addresses so prediction helpers cannot retain cached embedded bytecode. The opt-in historical fork test remains separate; the real PoolManager integration runs locally.
 
 ## After launch
 
-Follow [launch-v38.md](launch-v38.md) (order, wiring calls, objective texts); `launch-v37.md` keeps the oracle bodies and question definitions. The requester supplies the existing token, launch identities and coordinates, and the frozen free-pack / Identity MD roots and snapshot. Balanced packs are fixed at deployment. No swarm wallet is supplied: every swarm authority points to the non-upgradeable SwarmDesk, whose only inputs are attested oracle answers. Both roots are constructor arguments; free claims retain the 30-day window.
+For the v3.17 L1 handoff and the reproduced import-audit corrections, see [ADAPTATION.md](ADAPTATION.md).
+After binding, register and verify `FarmRewards` (role 1) before submitting stream-0 answers or
+buying stream-0 backups. Until then intake reverts `NotConfigured` and stores nothing; a paid
+backup callback can fail after its fee was spent. Relay the same signed bytes later only while
+their slot, epoch and expiry checks still pass. Defer execution until all modules are wired.
+
+Follow [launch-v39.md](launch-v39.md), the current v3.17 runbook (order, wiring calls, objective texts); `launch-v37.md` keeps the oracle bodies and question definitions. The requester supplies the existing token, launch identities and coordinates, and the frozen free-pack / Identity MD roots and snapshot. Balanced packs are fixed at deployment. No swarm wallet is supplied: every swarm authority points to the non-upgradeable SwarmDesk, whose only inputs are attested oracle answers. Both roots are constructor arguments; free claims retain the 30-day window.
 
 Ethereum-funded IMD schedules deliver four event answers per day and one weekly regulator (about 2.0714 IMD/day). Permissionless keepers execute committed answers and enable announced phases after notice. Anyone can top up SwarmDesk with Robinhood IMD for its rate-limited backup asks. No game administrator, signer key, root setter, profile selection or moderation path exists. Oracle endpoints and signer are immutable under this explicit no-admin policy.
 
