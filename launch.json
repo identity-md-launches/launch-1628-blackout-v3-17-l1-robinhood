@@ -1,0 +1,25 @@
+{
+  "kind": "evm_contracts",
+  "contracts": [
+    {
+      "contract": "SwarmDesk",
+      "constructorArgs": [
+        "0x6f7261636c652e72657175657374406f7261636c652d31000000000000000000",
+        "5391989333430298100116863486635657822062725418115979424500284366258177",
+        "0x2fc5a57f2c5f7bc083ea8ac5016234f1a0b1c68a514e5d921956cc57948534ef",
+        "0xc13efed8438aab53ea052a4507def2dc4ce9856765520dfa28c66daa59cfc11d",
+        "0x00e69e4445c7ca7256338293f9f9cea439fd2beb1959d1d43ebec7b14493e2f6",
+        "0xc0ae7511b06744cf7ccadc6b60ff9ff96cb7234cf32988850df33324861cc8df",
+        "0x11ed7438974e96ecc962201e9c46422c7bf239d725876863fa25a56c734b20d3",
+        "0x6d51cBE774aeAe4dd40bCA2560E9bc2695A0d007"
+      ]
+    },
+    {
+      "contract": "EndowmentEscrow",
+      "constructorArgs": [
+        "$contract:SwarmDesk"
+      ]
+    }
+  ],
+  "notes": "BLACKOUT v3.17 L1 on Robinhood Chain (4663), one evm_contracts launch: SwarmDesk at index 0, EndowmentEscrow at index 1 with its desk set to $contract:SwarmDesk from this same launch. Return both addresses, their indices and this launch number. SwarmDesk takes eight static words: action, policyWord, event/regulator questions and bodies, GAME_CONFIG_HASH 0x11ed7438974e96ecc962201e9c46422c7bf239d725876863fa25a56c734b20d3, and binder 0x6d51cBE774aeAe4dd40bCA2560E9bc2695A0d007 (project wallet, not an IMD address; the only account that may call bind, others get Unauthorized). Oracle signer/endpoints and LaunchFactory (0xa25b...4645) are compiled in; no protocol address is a constructor word. After L3 the binder calls bind(REGISTRY, registryCreationCode, paramsCreationCode, N_A, 1, N_A, 0, N_TOKEN); bind reads LaunchFactory.positionOf(N_TOKEN) and refuses any registry whose market is not the hook recorded for the registry's token. Keep the L2 launch number with the L1/L3 outputs for the keeper (wiring.tokenLaunch). EndowmentEscrow forwards once, permissionlessly, to the proven RewardPool of the registry the Desk bound. Accepted low/info findings are in docs/accepted-v317.md; a lost binder key leaves the Desk unbound and the endowment in escrow. Built with solc 0.8.26, optimizer 200, cancun, viaIR false, bytecode_hash none. Project: https://playblackout.xyz"
+}
